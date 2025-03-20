@@ -1,78 +1,82 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import NotificationIcon from "@/components/notification-icon"
-import "../styles/main.css"
+import { useEffect, useState } from "react";
+import { X } from "lucide-react";
+// import "./styles.css";
 
 export default function Home() {
-  const [permission, setPermission] = useState("default")
-  const [notificationSent, setNotificationSent] = useState(false)
+  const [notificationSent, setNotificationSent] = useState(false);
+  const [showPopup, setShowPopup] = useState(false);
+  const [isClient, setIsClient] = useState(false); // Ensure correct hydration
 
   useEffect(() => {
-    if ("Notification" in window) {
-      setPermission(Notification.permission)
+    setIsClient(true); // Mark component as client-rendered
+    if ("Notification" in window && Notification.permission !== "denied") {
+      Notification.requestPermission();
     }
-  }, [])
+  }, []);
 
-  const handleSendNotification = async () => {
-    if (!("Notification" in window)) {
-      alert("This browser does not support notifications")
-      return
+  const handleSendNotification = () => {
+    setShowPopup(true);
+    setNotificationSent(true);
+    setTimeout(() => setNotificationSent(false), 3000);
+
+    if (Notification.permission === "granted") {
+      new Notification("DiGiLABS Notification", {
+        body: "You have a new notification!",
+        icon: "/notification-icon.png",
+      });
     }
+  };
 
-    if (permission !== "granted") {
-      const newPermission = await Notification.requestPermission()
-      setPermission(newPermission)
-
-      if (newPermission !== "granted") {
-        alert("Please allow notifications to use this feature")
-        return
-      }
-    }
-
-    try {
-      if ("serviceWorker" in navigator && "PushManager" in window) {
-        const registration = await navigator.serviceWorker.ready
-
-        new Notification("DiGiLABS Notification", {
-          body: "You have a new notification!",
-          icon: "/icons/icon-192x192.png",
-        })
-
-        setNotificationSent(true)
-        setTimeout(() => setNotificationSent(false), 3000)
-      } else {
-        new Notification("DiGiLABS Notification", {
-          body: "You have a new notification!",
-          icon: "/icons/icon-192x192.png",
-        })
-
-        setNotificationSent(true)
-        setTimeout(() => setNotificationSent(false), 3000)
-      }
-    } catch (error) {
-      console.error("Error sending notification:", error)
-      alert("Failed to send notification")
-    }
-  }
+  if (!isClient) return null; // Prevent mismatched SSR content
 
   return (
     <main className="app-container">
       <div className="content-wrapper">
         <h1 className="title">Hola!</h1>
 
-        <div className="icon-container">
-          <NotificationIcon isAnimating={notificationSent} />
+        <div className="notification-icon-wrapper">
+          <div className="circle outer"></div>
+          <div className="circle middle"></div>
+          <div className="icon-container">
+            <img
+              src="/bell-icon.png"
+              alt="Notification Bell"
+              width="200"
+              height="200"
+              className={notificationSent ? "animate" : ""}
+            />
+          </div>
         </div>
-
-        <h2 className="heading">Lorem Ipsum...</h2>
-        <p className="subtitle">Lorem ipsum dolor sit amet.</p>
-
-        <button className={`notification-button ${notificationSent ? "animate" : ""}`} onClick={handleSendNotification}>
+        <div className="text">
+          <h2 className="heading">Lorem Ipsum...</h2><br/>
+          <p className="subtitle">Lorem ipsum dolor sit amet.</p>
+        </div>
+        <button
+          className="notification-button"
+          onClick={handleSendNotification}
+        >
           Send Notification
         </button>
       </div>
-    </main>
-  )
-}
 
+      {showPopup && (
+        <div className="notification-popup">
+          <div className="popup-content">
+            <div className="popup-header">
+              <h3>Notification Received</h3>
+              <button
+                className="close-button"
+                onClick={() => setShowPopup(false)}
+              >
+                <X size={20} />
+              </button>
+            </div>
+            <p>You have received a new notification!</p>
+          </div>
+        </div>
+      )}
+    </main>
+  );
+}

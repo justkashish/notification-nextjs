@@ -1,16 +1,38 @@
 // Service Worker for PWA functionality
 
 const CACHE_NAME = "digilabs-notification-app-v1"
-const urlsToCache = ["/", "/icons/icon-192x192.png", "/icons/icon-512x512.png"]
+const urlsToCache = ["/", "/bell-icon.png", "/notification-icon.png"]
 
+// Install event - cache assets
 self.addEventListener("install", (event) => {
     event.waitUntil(
-        caches.open(CACHE_NAME).then((cache) => {
-            return cache.addAll(urlsToCache)
-        }),
-    )
+            caches.open(CACHE_NAME).then((cache) => {
+                console.log("Opened cache")
+                return cache.addAll(urlsToCache)
+            }),
+        )
+        // Activate immediately
+    self.skipWaiting()
 })
 
+// Activate event - clean up old caches
+self.addEventListener("activate", (event) => {
+    event.waitUntil(
+            caches.keys().then((cacheNames) => {
+                return Promise.all(
+                    cacheNames.map((cacheName) => {
+                        if (cacheName !== CACHE_NAME) {
+                            return caches.delete(cacheName)
+                        }
+                    }),
+                )
+            }),
+        )
+        // Claim clients immediately
+    self.clients.claim()
+})
+
+// Fetch event - serve from cache if available
 self.addEventListener("fetch", (event) => {
     event.respondWith(
         caches.match(event.request).then((response) => {
@@ -23,13 +45,19 @@ self.addEventListener("fetch", (event) => {
     )
 })
 
+// Push event - handle push notifications
 self.addEventListener("push", (event) => {
-    const data = event.data ? event.data.json() : { title: "DiGiLABS Notification", body: "You have a new notification!" }
+    const data = event.data ?
+        event.data.json() :
+        {
+            title: "DiGiLABS Notification",
+            body: "You have a new notification!",
+        }
 
     const options = {
         body: data.body || "You have a new notification!",
-        icon: "/icons/icon-192x192.png",
-        badge: "/icons/icon-192x192.png",
+        icon: "/notification-icon.png",
+        badge: "/notification-icon.png",
         vibrate: [100, 50, 100],
         data: {
             url: data.url || "/",
@@ -39,6 +67,7 @@ self.addEventListener("push", (event) => {
     event.waitUntil(self.registration.showNotification(data.title || "DiGiLABS Notification", options))
 })
 
+// Notification click event - handle notification clicks
 self.addEventListener("notificationclick", (event) => {
     event.notification.close()
 

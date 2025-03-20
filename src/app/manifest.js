@@ -8,13 +8,13 @@ export default function manifest() {
         background_color: "#1E0B41",
         theme_color: "#1E0B41",
         icons: [{
-                src: "/icons/noti.png",
+                src: "/notification-icon.png",
                 sizes: "192x192",
                 type: "image/png",
                 purpose: "any maskable",
             },
             {
-                src: "/icons/noti2.png",
+                src: "/notification-icon.png",
                 sizes: "512x512",
                 type: "image/png",
                 purpose: "any maskable",
